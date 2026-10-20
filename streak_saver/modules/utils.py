@@ -33,6 +33,8 @@ def get_config() -> configparser.ConfigParser:
         config["SETTINGS"]["last_send"] = ""
     if "default_message" not in config["SETTINGS"]:
         config["SETTINGS"]["default_message"] = "❤️"
+    if "send_time" not in config["SETTINGS"]:
+        config["SETTINGS"]["send_time"] = "20:00"
 
     return config
 

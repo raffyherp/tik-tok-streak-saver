@@ -45,6 +45,7 @@ async function load() {
   try {
     const state = await request('/api/state');
     document.querySelector('#defaultMessage').value = state.default_message;
+    document.querySelector('#sendTime').value = state.send_time || '20:00';
     document.querySelector('#scheduleText').textContent = state.schedule + (state.last_send ? ` · terakhir ${state.last_send}` : '');
     document.querySelector('#cookieStatus').textContent = state.cookie_ready ? 'Cookie TikTok siap' : 'Cookie belum ada';
     document.querySelector('#statusDot').classList.toggle('ready', state.cookie_ready);
@@ -73,9 +74,13 @@ document.querySelector('#saveButton').onclick = async event => {
   const button = event.currentTarget; button.disabled = true;
   try {
     const data = await request('/api/settings', {method: 'POST', body: JSON.stringify({
-      default_message: document.querySelector('#defaultMessage').value.trim(), friends: collectFriends(),
+      default_message: document.querySelector('#defaultMessage').value.trim(),
+      send_time: document.querySelector('#sendTime').value,
+      friends: collectFriends(),
     })});
-    notify(`${data.saved} teman aktif tersimpan.`);
+    const sendTime = document.querySelector('#sendTime').value;
+    document.querySelector('#scheduleText').textContent = `Setiap hari ${sendTime} WIB`;
+    notify(`${data.saved} teman aktif dan jam ${sendTime} WIB tersimpan.`);
   } catch (error) { notify(error.message, true); }
   finally { button.disabled = false; }
 };

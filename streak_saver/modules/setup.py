@@ -21,6 +21,7 @@ def setup():
     config.add_section("SETTINGS")
     config["SETTINGS"]["last_send"] = " "
     config["SETTINGS"]["default_message"] = "❤️"
+    config["SETTINGS"]["send_time"] = "20:00"
     app_dir = typer.get_app_dir("streak_saver")
     config_path = Path(app_dir) / "config.ini"
     config_path.parent.mkdir(parents=True, exist_ok=True)

@@ -8,7 +8,8 @@ from streak_saver.modules.utils import (
     send_success_message,
 )
 from playwright.sync_api import expect, sync_playwright
-from datetime import date
+from datetime import datetime
+from zoneinfo import ZoneInfo
 import typer
 
 
@@ -57,7 +58,7 @@ def send_messages():
         send_error_message("You haven't setup your app yet. Please use <streak-saver setup> and <streak-saver login> to use it")
         return
 
-    today = str(date.today())
+    today = datetime.now(ZoneInfo("Asia/Jakarta")).date().isoformat()
     if config["SETTINGS"]["last_send"] == today:
         send_script_message("Already send messages today.")
         return

@@ -50,7 +50,7 @@ draft; it does not guarantee delivery to the recipient.
 
 The included dashboard lets you scan TikTok conversations, select recipients,
 set a default or per-friend message, renew exported browser cookies, and trigger
-a send manually. Coolify also runs the CLI sender on a daily schedule.
+a send manually. The daily send time is configured in the dashboard in WIB.
 
 1. Push this repository to a Git provider, then in Coolify create an
    **Application** from that repository with the **Docker Compose** build pack.
@@ -78,12 +78,12 @@ a send manually. Coolify also runs the CLI sender on a daily schedule.
    Upload its `config.ini` and `cookies.json` to
    `/data/tiktok-streak/streak_saver/` on the Coolify server. Treat
    `cookies.json` as a password; do not commit it to Git.
-4. Deploy the application and open its domain to configure recipients. In
-   Coolify open **Scheduled Tasks** and create a
-   task with command `streak-saver send_messages`, for example on the schedule
-   `0 20 * * *`. Use a 300-second timeout. The schedule follows the Coolify
-   server timezone; use `0 13 * * *` when the server is UTC and the desired
-   time is 20:00 WIB.
+4. Deploy the application and open its domain to configure recipients and the
+   WIB send time. In Coolify open **Scheduled Tasks** and create a task with
+   command `streak-saver scheduled_run`, schedule `*/5 * * * *`, and a
+   240-second timeout. The task checks the dashboard setting every five minutes,
+   catches up if the exact minute was missed, and still sends at most once per
+   Jakarta calendar day.
 
 When TikTok cookies expire, sign in again on the graphical computer and replace
 the server's `cookies.json`, then run the Coolify task manually to verify it.

@@ -45,7 +45,7 @@ button:disabled { opacity: .45; cursor: wait; transform: none; }
 .table-head { padding: 13px 20px; color: var(--muted); font-size: 12px; font-weight: 750; text-transform: uppercase; letter-spacing: .06em; border-bottom: 1px solid var(--line); }
 .friend-row { padding: 12px 20px; border-bottom: 1px solid rgba(43,46,58,.7); }
 .friend-row:last-child { border-bottom: 0; }
-input[type="text"], textarea { width: 100%; border: 1px solid #343744; border-radius: 11px; padding: 11px 12px; background: #10121a; color: var(--text); font: inherit; outline: none; }
+input[type="text"], input[type="time"], textarea { width: 100%; border: 1px solid #343744; border-radius: 11px; padding: 11px 12px; background: #10121a; color: var(--text); font: inherit; outline: none; }
 input:focus, textarea:focus { border-color: var(--cyan); box-shadow: 0 0 0 3px rgba(37,244,238,.09); }
 input[type="checkbox"] { width: 21px; height: 21px; accent-color: var(--pink); }
 .remove { padding: 7px; background: transparent; color: #797e91; font-size: 20px; }
@@ -54,6 +54,9 @@ input[type="checkbox"] { width: 21px; height: 21px; accent-color: var(--pink); }
 .grid { display: grid; grid-template-columns: 1.5fr .8fr; gap: 14px; margin-top: 14px; }
 .settings, .cookie-box { padding: 22px; }
 .settings label { display: block; font-weight: 800; margin-bottom: 9px; }
+.settings .time-label { margin-top: 18px; }
+.time-setting { display: grid; grid-template-columns: 130px 1fr; gap: 14px; align-items: center; }
+.time-setting small { color: var(--muted); line-height: 1.5; }
 .button-row { margin-top: 14px; }
 .file-button { display: inline-block; margin-top: 17px; }
 .file-button input { display: none; }
@@ -68,4 +71,5 @@ input[type="checkbox"] { width: 21px; height: 21px; accent-color: var(--pink); }
   .table-head { display: none; }
   .friend-row { grid-template-columns: 36px 1fr 36px; }
   .friend-row .message { grid-column: 2 / 4; }
+  .time-setting { grid-template-columns: 1fr; }
 }

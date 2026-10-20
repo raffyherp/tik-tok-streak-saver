@@ -1,4 +1,5 @@
 from streak_saver.modules.send_messages import app as send_messages_app
+from streak_saver.modules.schedule import app as schedule_app
 from streak_saver.modules.get_cookies import app as cookies_app
 from streak_saver.modules.autostart import app as autostart_app
 from streak_saver.modules.manage_users import app as users_app
@@ -15,6 +16,7 @@ app.add_typer(cookies_app)
 app.add_typer(users_app)
 app.add_typer(autostart_app)
 app.add_typer(send_messages_app)
+app.add_typer(schedule_app)
 
 
 @app.callback(invoke_without_command=True)

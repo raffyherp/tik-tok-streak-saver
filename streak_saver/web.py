@@ -30,6 +30,7 @@ class Friend(BaseModel):
 
 class SettingsPayload(BaseModel):
     default_message: str = Field(min_length=1, max_length=500)
+    send_time: str = Field(pattern=r"^(?:[01]\d|2[0-3]):[0-5]\d$")
     friends: list[Friend]
 
 
@@ -59,7 +60,7 @@ def ensure_config() -> configparser.ConfigParser:
     except (FileNotFoundError, KeyError):
         config = configparser.ConfigParser(interpolation=None)
         config["users"] = {}
-        config["SETTINGS"] = {"last_send": "", "default_message": "🔥"}
+        config["SETTINGS"] = {"last_send": "", "default_message": "🔥", "send_time": "20:00"}
         save_config(config)
         return config
 
@@ -82,13 +83,15 @@ def state() -> dict:
         {"username": username, "message": message, "enabled": True}
         for username, message in config["users"].items()
     ]
+    send_time = config["SETTINGS"].get("send_time", "20:00")
     return {
         "friends": selected,
         "discovered": cached_conversations(),
         "default_message": config["SETTINGS"].get("default_message", "🔥"),
+        "send_time": send_time,
         "last_send": config["SETTINGS"].get("last_send", ""),
         "cookie_ready": cookies_path.exists(),
-        "schedule": "Setiap hari 20:00 WIB",
+        "schedule": f"Setiap hari {send_time} WIB",
     }
 
 
@@ -103,6 +106,7 @@ def update_settings(payload: SettingsPayload) -> dict:
     config["users"].clear()
     config["users"].update(chosen)
     config["SETTINGS"]["default_message"] = payload.default_message.strip()
+    config["SETTINGS"]["send_time"] = payload.send_time
     save_config(config)
     return {"saved": len(chosen)}
 

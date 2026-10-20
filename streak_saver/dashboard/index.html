@@ -41,6 +41,11 @@
       <div class="panel settings">
         <label for="defaultMessage">Pesan default</label>
         <textarea id="defaultMessage" maxlength="500" rows="3" placeholder="Pesan yang dikirim jika pesan khusus kosong"></textarea>
+        <label for="sendTime" class="time-label">Jam kirim otomatis (WIB)</label>
+        <div class="time-setting">
+          <input id="sendTime" type="time" required value="20:00">
+          <small>Server memeriksa jadwal tiap 5 menit dan mengirim maksimal sekali sehari.</small>
+        </div>
         <div class="button-row">
           <button id="saveButton" class="primary">Simpan pilihan</button>
           <button id="sendButton" class="danger">Kirim sekarang</button>
