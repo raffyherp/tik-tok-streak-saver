@@ -39,6 +39,7 @@ def discover_conversations() -> list[str]:
                 raise RuntimeError("Cookie TikTok sudah tidak valid. Upload cookie baru.")
 
             selectors = (
+                '[data-e2e="dm-new-conversation-item"]',
                 '[data-e2e="conversation-item"]',
                 '[data-e2e="chat-list-item"]',
                 '[data-e2e="chat-list"] [role="listitem"]',
@@ -55,7 +56,11 @@ def discover_conversations() -> list[str]:
                     try:
                         if not item.is_visible():
                             continue
-                        name = _first_meaningful_line(item.inner_text(timeout=2000))
+                        nickname = item.locator('[data-e2e="dm-new-conversation-nickname"]').first
+                        if nickname.count():
+                            name = nickname.inner_text(timeout=2000).strip().lstrip("@").strip()
+                        else:
+                            name = _first_meaningful_line(item.inner_text(timeout=2000))
                     except Exception:
                         continue
                     if name and name not in names:
