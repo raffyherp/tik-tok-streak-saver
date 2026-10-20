@@ -79,3 +79,32 @@ def cached_conversations() -> list[str]:
     except (OSError, json.JSONDecodeError):
         return []
     return value if isinstance(value, list) else []
+
+
+def inbox_diagnostics() -> dict:
+    """Return selector metadata without exposing message or contact text."""
+    with sync_playwright() as playwright:
+        browser = playwright.chromium.launch(args=["--disable-blink-features=AutomationControlled"])
+        try:
+            context = browser.new_context(
+                user_agent=(
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+                )
+            )
+            context.add_cookies(get_cookies())
+            page = context.new_page()
+            page.goto("https://www.tiktok.com/messages", wait_until="domcontentloaded", timeout=60000)
+            page.wait_for_timeout(8000)
+            metadata = page.locator("[data-e2e]").evaluate_all(
+                "elements => [...new Set(elements.map(element => element.getAttribute('data-e2e')))].sort()"
+            )
+            return {
+                "url": page.url,
+                "title": page.title(),
+                "elements": page.locator("body *").count(),
+                "body_text_length": len(page.locator("body").inner_text()),
+                "data_e2e": metadata,
+            }
+        finally:
+            browser.close()
