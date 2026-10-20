@@ -229,6 +229,12 @@ class BrowserTests(unittest.TestCase):
         sender._send_message(self.page, "ALICE", "🔥")
         self.assertEqual(self.sent, [{"user": "alice", "message": "🔥"}])
 
+    def test_conversation_name_matching_ignores_emoji_presentation_characters(self):
+        self.assertEqual(
+            sender._normalize_conversation_name("LC 🙂‍↔️"),
+            sender._normalize_conversation_name("lc 🙂↔"),
+        )
+
     def test_unconsumed_draft_is_a_failure(self):
         self.page.unroute("**/*")
         stuck_layout = INBOX.replace("editor.textContent = '';", "/* Send did not consume the draft. */")

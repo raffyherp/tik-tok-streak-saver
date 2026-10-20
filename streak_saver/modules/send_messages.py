@@ -25,7 +25,12 @@ class SendAlreadyRunning(RuntimeError):
 
 
 def _normalize_conversation_name(value: str) -> str:
-    return unicodedata.normalize("NFKC", value).strip().lstrip("@").strip().casefold()
+    normalized = unicodedata.normalize("NFKC", value).strip().lstrip("@").strip().casefold()
+    normalized = "".join(
+        character for character in normalized
+        if character not in {"\u200b", "\u200c", "\u200d", "\ufe0e", "\ufe0f"}
+    )
+    return " ".join(normalized.split())
 
 
 @contextmanager
@@ -86,7 +91,8 @@ def _open_conversation(page, username: str) -> None:
             nickname = item.locator('[data-e2e="dm-new-conversation-nickname"]').first
             try:
                 name = nickname.inner_text(timeout=1000)
-                if item.is_visible() and _normalize_conversation_name(name) == _normalize_conversation_name(username):
+                if _normalize_conversation_name(name) == _normalize_conversation_name(username):
+                    item.scroll_into_view_if_needed(timeout=5000)
                     item.click(force=True, timeout=10000, no_wait_after=True)
                     expect(item).to_have_attribute("aria-selected", "true", timeout=10000)
                     page.wait_for_function(
