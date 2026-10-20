@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Streak Saver</title>
+  <link rel="stylesheet" href="/assets/style.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">TIKTOK AUTOMATION</p>
+        <h1>Streak <span>Saver</span></h1>
+        <p class="subtitle">Pilih teman, atur pesannya, lalu biarkan server menjaga streak setiap hari.</p>
+      </div>
+      <div class="status-card">
+        <span id="statusDot" class="dot"></span>
+        <div><strong id="cookieStatus">Memeriksa cookie…</strong><small id="scheduleText">Memuat jadwal</small></div>
+      </div>
+    </header>
+
+    <section class="toolbar panel">
+      <div>
+        <h2>Daftar teman</h2>
+        <p>Centang percakapan yang ingin dijaga streak-nya.</p>
+      </div>
+      <div class="actions">
+        <button id="scanButton" class="secondary">↻ Scan TikTok</button>
+        <button id="addButton" class="secondary">＋ Tambah manual</button>
+      </div>
+    </section>
+
+    <section class="panel friend-panel">
+      <div class="table-head"><span>Aktif</span><span>Teman</span><span>Pesan khusus (opsional)</span><span></span></div>
+      <div id="friendList" class="friend-list"></div>
+      <div id="emptyState" class="empty">Belum ada teman. Tekan <b>Scan TikTok</b> untuk membaca percakapan.</div>
+    </section>
+
+    <section class="grid">
+      <div class="panel settings">
+        <label for="defaultMessage">Pesan default</label>
+        <textarea id="defaultMessage" maxlength="500" rows="3" placeholder="Pesan yang dikirim jika pesan khusus kosong"></textarea>
+        <div class="button-row">
+          <button id="saveButton" class="primary">Simpan pilihan</button>
+          <button id="sendButton" class="danger">Kirim sekarang</button>
+        </div>
+      </div>
+      <div class="panel cookie-box">
+        <h3>Perbarui cookie</h3>
+        <p>Upload ulang JSON jika sesi TikTok habis. File hanya disimpan di volume server.</p>
+        <label class="file-button">Pilih cookies.json<input id="cookieFile" type="file" accept="application/json,.json"></label>
+      </div>
+    </section>
+
+    <div id="toast" class="toast" role="status"></div>
+  </main>
+  <script src="/assets/app.js"></script>
+</body>
+</html>

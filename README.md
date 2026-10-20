@@ -48,13 +48,14 @@ draft; it does not guarantee delivery to the recipient.
 
 ## Deploy with Coolify
 
-This project is a scheduled CLI task, not a web application. The included
-`Dockerfile` and `docker-compose.yml` keep a container running so Coolify can
-execute `streak-saver send_messages` through **Scheduled Tasks**.
+The included dashboard lets you scan TikTok conversations, select recipients,
+set a default or per-friend message, renew exported browser cookies, and trigger
+a send manually. Coolify also runs the CLI sender on a daily schedule.
 
 1. Push this repository to a Git provider, then in Coolify create an
    **Application** from that repository with the **Docker Compose** build pack.
-   No domain or exposed port is needed.
+   Expose port `8000`, attach a domain, and configure `DASHBOARD_USERNAME` and
+   `DASHBOARD_PASSWORD` as runtime environment variables.
 2. On the Coolify server, create the persistent state directory:
 
    ```sh
@@ -63,10 +64,12 @@ execute `streak-saver send_messages` through **Scheduled Tasks**.
 
    The Compose file mounts that directory at `/data`. The app therefore reads
    its files from `/data/streak_saver/` inside the container.
-3. Perform `streak-saver setup` and `streak-saver login` on a computer with a
-   graphical browser. Login intentionally opens a visible TikTok browser and
-   cannot be completed in a normal Coolify container. Find that computer's
-   local state directory with:
+3. Export TikTok cookies as JSON from a browser where TikTok is already logged
+   in. Open the dashboard and upload the JSON under **Perbarui cookie**. Common
+   browser-extension cookie exports are normalized to Playwright's format
+   automatically. Alternatively, perform `streak-saver setup` and
+   `streak-saver login` on a computer with a graphical browser and copy the
+   resulting state directory. Find it with:
 
    ```sh
    python -c "import typer; print(typer.get_app_dir('streak_saver'))"
@@ -75,7 +78,8 @@ execute `streak-saver send_messages` through **Scheduled Tasks**.
    Upload its `config.ini` and `cookies.json` to
    `/data/tiktok-streak/streak_saver/` on the Coolify server. Treat
    `cookies.json` as a password; do not commit it to Git.
-4. Deploy the application. In Coolify open **Scheduled Tasks** and create a
+4. Deploy the application and open its domain to configure recipients. In
+   Coolify open **Scheduled Tasks** and create a
    task with command `streak-saver send_messages`, for example on the schedule
    `0 20 * * *`. Use a 300-second timeout. The schedule follows the Coolify
    server timezone; use `0 13 * * *` when the server is UTC and the desired

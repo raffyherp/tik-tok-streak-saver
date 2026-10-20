@@ -8,6 +8,10 @@ services:
     environment:
       TZ: Asia/Jakarta
       XDG_DATA_HOME: /data
+      DASHBOARD_USERNAME: ${DASHBOARD_USERNAME:-admin}
+      DASHBOARD_PASSWORD: ${DASHBOARD_PASSWORD:?Set DASHBOARD_PASSWORD}
+    ports:
+      - "8000:8000"
     volumes:
       # Change the host path if the Coolify server uses another data directory.
       - /data/tiktok-streak:/data

@@ -11,5 +11,6 @@ RUN pip install --no-cache-dir . \
 # Coolify mounts /data so configuration and TikTok cookies survive redeploys.
 ENV XDG_DATA_HOME=/data
 
-# Coolify Scheduled Tasks runs `streak-saver send_messages` in this container.
-CMD ["sleep", "infinity"]
+EXPOSE 8000
+
+CMD ["uvicorn", "streak_saver.web:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers"]

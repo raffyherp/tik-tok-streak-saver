@@ -6,10 +6,20 @@ import typer
 import json
 
 
+PLAYWRIGHT_COOKIE_KEYS = {
+    "name", "value", "url", "domain", "path", "expires", "httpOnly", "secure", "sameSite",
+}
+
+
+def get_app_directory() -> Path:
+    app_dir = Path(typer.get_app_dir("streak_saver"))
+    app_dir.mkdir(parents=True, exist_ok=True)
+    return app_dir
+
+
 def get_config() -> configparser.ConfigParser:
-    config = configparser.ConfigParser()
-    app_dir = typer.get_app_dir("streak_saver")
-    config_path = Path(app_dir) / "config.ini"
+    config = configparser.ConfigParser(interpolation=None)
+    config_path = get_app_directory() / "config.ini"
 
     if not config_path.exists():
         raise FileNotFoundError("Can't find config. Please use <streak-saver setup> to create it.")
@@ -26,15 +36,60 @@ def get_config() -> configparser.ConfigParser:
 
 
 def save_config(config: configparser.ConfigParser) -> None:
-    app_dir = typer.get_app_dir("streak_saver")
-    config_path = Path(app_dir) / "config.ini"
+    config_path = get_app_directory() / "config.ini"
     
     with open(config_path, "w", encoding="utf-8") as configfile:
         config.write(configfile)
 
+def normalize_cookie(cookie: dict) -> dict:
+    """Convert common browser-extension exports to Playwright's cookie shape."""
+    normalized = dict(cookie)
+    if "expirationDate" in normalized and "expires" not in normalized:
+        normalized["expires"] = normalized["expirationDate"]
+
+    same_site = normalized.get("sameSite")
+    if isinstance(same_site, str):
+        same_site = {
+            "no_restriction": "None",
+            "unspecified": None,
+            "strict": "Strict",
+            "lax": "Lax",
+            "none": "None",
+        }.get(same_site.lower(), same_site)
+        if same_site:
+            normalized["sameSite"] = same_site
+        else:
+            normalized.pop("sameSite", None)
+    elif same_site is None:
+        normalized.pop("sameSite", None)
+
+    if normalized.get("session") is True:
+        normalized.pop("expires", None)
+
+    return {
+        key: value for key, value in normalized.items()
+        if key in PLAYWRIGHT_COOKIE_KEYS and value is not None
+    }
+
+
+def normalize_cookies(cookies: list[dict]) -> list[dict]:
+    return [normalize_cookie(cookie) for cookie in cookies if cookie.get("name") and "value" in cookie]
+
+
+def save_cookies(cookies: list[dict]) -> int:
+    if not isinstance(cookies, list):
+        raise ValueError("Cookie file must contain a JSON array.")
+    normalized = normalize_cookies(cookies)
+    if not any(cookie.get("name") in {"sessionid", "sessionid_ss", "sid_tt"} for cookie in normalized):
+        raise ValueError("TikTok login cookie was not found.")
+    cookies_path = get_app_directory() / "cookies.json"
+    with open(cookies_path, "w", encoding="utf-8") as cookies_file:
+        json.dump(normalized, cookies_file, ensure_ascii=False, indent=2)
+    return len(normalized)
+
+
 def get_cookies():
-    app_dir = typer.get_app_dir("streak_saver")
-    cookies_path = Path(app_dir) / "cookies.json"
+    cookies_path = get_app_directory() / "cookies.json"
 
     if not cookies_path.exists():
         send_error_message("Can't find cookies. Please use <streak-saver login> first.")
@@ -42,7 +97,7 @@ def get_cookies():
     with open(cookies_path, "r", encoding="utf-8") as cookies_file:
         cookies = json.load(cookies_file)
     
-    return cookies
+    return normalize_cookies(cookies)
 
 def send_script_message(text: str) -> None:
     message = Text(text, style="bold")
