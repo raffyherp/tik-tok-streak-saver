@@ -126,9 +126,11 @@ class SendingTests(unittest.TestCase):
 INBOX = """<!doctype html><html><body>
 <span style="display:none">alice</span>
 <input aria-label="Send a message..." style="display:none">
-<button onclick="openChat('alice_extra')"><span>alice_extra</span></button>
-<button onclick="openChat('alice')"><span>alice</span></button>
-<button onclick="openChat('bob')"><span>bob</span></button>
+<div data-e2e="dm-new-conversation-list">
+<button data-e2e="dm-new-conversation-item" onclick="openChat('alice_extra')"><span data-e2e="dm-new-conversation-nickname">alice_extra</span></button>
+<button data-e2e="dm-new-conversation-item" onclick="openChat('alice')"><span data-e2e="dm-new-conversation-nickname">alice</span></button>
+<button data-e2e="dm-new-conversation-item" onclick="openChat('bob')"><span data-e2e="dm-new-conversation-nickname">bob</span></button>
+</div>
 <div id="conversation"></div>
 <script>
 function openChat(user) {
@@ -196,6 +198,16 @@ class BrowserTests(unittest.TestCase):
         self.page.route("**/*", lambda route: route.fulfill(body=old_layout, content_type="text/html"))
         sender._send_message(self.page, "bob", "Привет")
         self.assertEqual(self.sent, [{"user": "bob", "message": "Привет"}])
+
+    def test_current_nested_editor_layout_uses_the_contenteditable_child(self):
+        self.page.unroute("**/*")
+        current_layout = INBOX.replace(
+            '<div contenteditable="true" data-e2e="message-input-area" aria-label="Отправить сообщение"></div>',
+            '<div data-e2e="message-input-area"><div role="textbox" contenteditable="true" aria-label="Send a message..."></div></div>',
+        )
+        self.page.route("**/*", lambda route: route.fulfill(body=current_layout, content_type="text/html"))
+        sender._send_message(self.page, "alice", "🔥")
+        self.assertEqual(self.sent, [{"user": "alice", "message": "🔥"}])
 
     def test_unconsumed_draft_is_a_failure(self):
         self.page.unroute("**/*")

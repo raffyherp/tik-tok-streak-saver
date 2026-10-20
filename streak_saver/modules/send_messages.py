@@ -16,18 +16,79 @@ import typer
 app = typer.Typer()
 
 
+def _open_conversation(page, username: str) -> None:
+    """Open an exact inbox item, scrolling TikTok's virtual list if needed."""
+    items = page.locator('[data-e2e="dm-new-conversation-item"]')
+    try:
+        items.first.wait_for(state="visible", timeout=10000)
+    except Exception:
+        # Keep compatibility with older inbox layouts.
+        page.get_by_text(username, exact=True).filter(visible=True).first.click(
+            timeout=10000, no_wait_after=True
+        )
+        return
+
+    conversation_list = page.locator('[data-e2e="dm-new-conversation-list"]').first
+    if conversation_list.count():
+        conversation_list.evaluate(
+            """element => {
+                let scroller = element;
+                while (scroller.parentElement && scroller.scrollHeight <= scroller.clientHeight + 1) {
+                    scroller = scroller.parentElement;
+                }
+                scroller.scrollTop = 0;
+            }"""
+        )
+
+    previous_position = -1
+    for _ in range(30):
+        for index in range(items.count()):
+            item = items.nth(index)
+            nickname = item.locator('[data-e2e="dm-new-conversation-nickname"]').first
+            try:
+                name = nickname.inner_text(timeout=1000).strip().lstrip("@").strip()
+                if item.is_visible() and name == username:
+                    item.click(force=True, timeout=10000, no_wait_after=True)
+                    return
+            except Exception:
+                continue
+
+        if not conversation_list.count():
+            break
+        position = conversation_list.evaluate(
+            """element => {
+                let scroller = element;
+                while (scroller.parentElement && scroller.scrollHeight <= scroller.clientHeight + 1) {
+                    scroller = scroller.parentElement;
+                }
+                const before = scroller.scrollTop;
+                scroller.scrollTop += Math.max(scroller.clientHeight * 0.8, 300);
+                return {before, after: scroller.scrollTop};
+            }"""
+        )
+        if position["after"] == position["before"] or position["after"] == previous_position:
+            break
+        previous_position = position["after"]
+        page.wait_for_timeout(250)
+
+    raise RuntimeError(f"Conversation {username!r} was not found in the TikTok inbox.")
+
+
 def _send_message(page, username: str, message: str) -> None:
     # Start from the inbox for each recipient instead of searching the previous
     # conversation's header and message history for a partial username match.
     page.goto("https://www.tiktok.com/messages", wait_until="domcontentloaded")
-    recipient = page.get_by_text(username, exact=True).filter(visible=True)
-    recipient.click(timeout=10000)
+    _open_conversation(page, username)
 
     # Prefer the stable attribute, which does not depend on the UI language.
     # Retain the accessible-label selector for layouts using the older editor.
     composer = page.locator(
-        '[data-e2e="message-input-area"], [data-e2e="message-input"], div[contenteditable="true"]'
-    ).filter(visible=True).or_(page.get_by_label("Send a message...", exact=True).filter(visible=True))
+        '[data-e2e="message-input-area"] [contenteditable="true"], '
+        '[data-e2e="message-input"][contenteditable="true"], '
+        'div[contenteditable="true"][role="textbox"]'
+    ).filter(visible=True).or_(
+        page.get_by_label("Send a message...", exact=True).filter(visible=True)
+    ).first
     composer.fill(message, timeout=10000)
     page.locator(
         '[data-e2e="message-send"], [data-e2e="send-button"], button[class*="Send"]'
