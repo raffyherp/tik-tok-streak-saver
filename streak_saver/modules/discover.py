@@ -161,3 +161,44 @@ def conversation_diagnostics(username: str) -> dict:
             return {"url": page.url, "items": item_states, "chatbox": structure}
         finally:
             browser.close()
+
+
+def delivery_diagnostics(username: str) -> dict:
+    """Check whether the configured message is present without printing its content."""
+    from streak_saver.modules.send_messages import _open_conversation
+    from streak_saver.modules.utils import get_config, get_user_message
+
+    config = get_config()
+    message = get_user_message(config["users"][username])
+    with sync_playwright() as playwright:
+        browser = playwright.chromium.launch(args=["--disable-blink-features=AutomationControlled"])
+        try:
+            context = browser.new_context(
+                user_agent=(
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+                )
+            )
+            context.add_cookies(get_cookies())
+            page = context.new_page()
+            page.goto("https://www.tiktok.com/messages", wait_until="domcontentloaded", timeout=60000)
+            _open_conversation(page, username)
+            page.wait_for_timeout(2000)
+            message_list = page.locator('[data-e2e="dm-new-message-list"]').first
+            matches = message_list.get_by_text(message, exact=True)
+            descriptors = matches.evaluate_all(
+                """elements => elements.map(element => ({
+                    tag: element.tagName,
+                    class: element.className,
+                    parentTag: element.parentElement?.tagName,
+                    parentClass: element.parentElement?.className
+                }))"""
+            )
+            return {
+                "username": username,
+                "message_length": len(message),
+                "exact_matches": matches.count(),
+                "matches": descriptors[-5:],
+            }
+        finally:
+            browser.close()
