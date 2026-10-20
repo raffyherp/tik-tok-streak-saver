@@ -84,6 +84,7 @@ def _send_message(page, username: str, message: str) -> None:
     # Retain the accessible-label selector for layouts using the older editor.
     composer = page.locator(
         '[data-e2e="message-input-area"] [contenteditable="true"], '
+        '[data-e2e="message-input-area"][contenteditable="true"], '
         '[data-e2e="message-input"][contenteditable="true"], '
         'div[contenteditable="true"][role="textbox"]'
     ).filter(visible=True).or_(
