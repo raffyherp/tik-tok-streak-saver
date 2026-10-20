@@ -10,6 +10,7 @@ RUN pip install --no-cache-dir . \
 # Click/Typer stores the app state under $XDG_DATA_HOME/streak_saver.
 # Coolify mounts /data so configuration and TikTok cookies survive redeploys.
 ENV XDG_DATA_HOME=/data
+ENV STREAK_SAVER_DATA_DIR=/data/streak_saver
 
 EXPOSE 8000
 

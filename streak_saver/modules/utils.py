@@ -4,6 +4,7 @@ import configparser
 from rich import print
 import typer
 import json
+import os
 
 
 PLAYWRIGHT_COOKIE_KEYS = {
@@ -12,7 +13,8 @@ PLAYWRIGHT_COOKIE_KEYS = {
 
 
 def get_app_directory() -> Path:
-    app_dir = Path(typer.get_app_dir("streak_saver"))
+    configured_path = os.environ.get("STREAK_SAVER_DATA_DIR")
+    app_dir = Path(configured_path) if configured_path else Path(typer.get_app_dir("streak_saver"))
     app_dir.mkdir(parents=True, exist_ok=True)
     return app_dir
 

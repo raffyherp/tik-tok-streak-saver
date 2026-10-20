@@ -8,6 +8,7 @@ services:
     environment:
       TZ: Asia/Jakarta
       XDG_DATA_HOME: /data
+      STREAK_SAVER_DATA_DIR: /data/streak_saver
       DASHBOARD_USERNAME: ${DASHBOARD_USERNAME:-admin}
       DASHBOARD_PASSWORD: ${DASHBOARD_PASSWORD:?Set DASHBOARD_PASSWORD}
     ports:
