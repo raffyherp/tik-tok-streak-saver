@@ -46,6 +46,44 @@ sent a message today will be skipped. The day is marked complete only after all
 recipients succeed. Browser confirmation means the message editor cleared the
 draft; it does not guarantee delivery to the recipient.
 
+## Deploy with Coolify
+
+This project is a scheduled CLI task, not a web application. The included
+`Dockerfile` and `docker-compose.yml` keep a container running so Coolify can
+execute `streak-saver send_messages` through **Scheduled Tasks**.
+
+1. Push this repository to a Git provider, then in Coolify create an
+   **Application** from that repository with the **Docker Compose** build pack.
+   No domain or exposed port is needed.
+2. On the Coolify server, create the persistent state directory:
+
+   ```sh
+   mkdir -p /data/tiktok-streak/streak_saver
+   ```
+
+   The Compose file mounts that directory at `/data`. The app therefore reads
+   its files from `/data/streak_saver/` inside the container.
+3. Perform `streak-saver setup` and `streak-saver login` on a computer with a
+   graphical browser. Login intentionally opens a visible TikTok browser and
+   cannot be completed in a normal Coolify container. Find that computer's
+   local state directory with:
+
+   ```sh
+   python -c "import typer; print(typer.get_app_dir('streak_saver'))"
+   ```
+
+   Upload its `config.ini` and `cookies.json` to
+   `/data/tiktok-streak/streak_saver/` on the Coolify server. Treat
+   `cookies.json` as a password; do not commit it to Git.
+4. Deploy the application. In Coolify open **Scheduled Tasks** and create a
+   task with command `streak-saver send_messages`, for example on the schedule
+   `0 20 * * *`. Use a 300-second timeout. The schedule follows the Coolify
+   server timezone; use `0 13 * * *` when the server is UTC and the desired
+   time is 20:00 WIB.
+
+When TikTok cookies expire, sign in again on the graphical computer and replace
+the server's `cookies.json`, then run the Coolify task manually to verify it.
+
 For development, install the local package with `python -m pip install -e .`,
 install Chromium with `python -m playwright install chromium`, then run
 `python -m unittest discover -s tests -v`. Browser tests use locally routed HTML

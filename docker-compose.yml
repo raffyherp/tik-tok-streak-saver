@@ -1,0 +1,13 @@
+services:
+  streak-saver:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    init: true
+    environment:
+      TZ: Asia/Jakarta
+      XDG_DATA_HOME: /data
+    volumes:
+      # Change the host path if the Coolify server uses another data directory.
+      - /data/tiktok-streak:/data
