@@ -149,7 +149,7 @@ def _send_message(page, username: str, message: str) -> None:
         page.get_by_label("Send a message...", exact=True).filter(visible=True)
     ).first
     message_list = page.locator('[data-e2e="dm-new-message-list"]').first
-    message_list.wait_for(state="visible", timeout=10000)
+    message_list.wait_for(state="attached", timeout=10000)
     matching_messages = message_list.get_by_text(message, exact=True)
     previous_matches = matching_messages.count()
     page.wait_for_timeout(750)
