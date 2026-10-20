@@ -35,6 +35,7 @@ class SendingTests(unittest.TestCase):
         ]
         mocks = [self.enterContext(p) for p in self.patches]
         self.save, self.playwright, self.send, self.error = mocks[3:7]
+        self.script = mocks[7]
         self.success = mocks[8]
         self.playwright.return_value.__enter__.return_value = self.runtime
 
@@ -118,6 +119,14 @@ class SendingTests(unittest.TestCase):
         self.assertEqual(self.send.call_count, 1)
         self.assertNotEqual(self.config["SETTINGS"]["last_send"], self.today)
         self.browser.close.assert_called_once()
+
+    def test_overlapping_execution_is_skipped(self):
+        with patch.object(sender, "_send_lock", side_effect=sender.SendAlreadyRunning):
+            sender.send_messages()
+        self.playwright.assert_not_called()
+        self.script.assert_called_once_with(
+            "Another send process is already running; skipping this execution."
+        )
 
 
 # The inbox includes similar usernames and hidden elements. Opening a chat

@@ -10,10 +10,44 @@ from streak_saver.modules.utils import (
 from playwright.sync_api import expect, sync_playwright
 from datetime import datetime
 from zoneinfo import ZoneInfo
+from contextlib import contextmanager
+import os
+import time
 import typer
 
 
 app = typer.Typer()
+
+
+class SendAlreadyRunning(RuntimeError):
+    pass
+
+
+@contextmanager
+def _send_lock():
+    """Prevent overlapping cron/manual browser sessions in the same volume."""
+    from streak_saver.modules.utils import get_app_directory
+
+    path = get_app_directory() / "send.lock"
+    for attempt in range(2):
+        try:
+            descriptor = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            os.write(descriptor, f"{os.getpid()} {time.time()}".encode())
+            os.close(descriptor)
+            break
+        except FileExistsError:
+            try:
+                stale = time.time() - path.stat().st_mtime > 600
+            except FileNotFoundError:
+                continue
+            if stale and attempt == 0:
+                path.unlink(missing_ok=True)
+                continue
+            raise SendAlreadyRunning("Another send process is already running.")
+    try:
+        yield
+    finally:
+        path.unlink(missing_ok=True)
 
 
 def _open_conversation(page, username: str) -> None:
@@ -101,6 +135,14 @@ def _send_message(page, username: str, message: str) -> None:
 
 @app.command("send_messages")
 def send_messages():
+    try:
+        with _send_lock():
+            _send_messages()
+    except SendAlreadyRunning:
+        send_script_message("Another send process is already running; skipping this execution.")
+
+
+def _send_messages():
     """
     Send messages to all people from the list. With autostart on runs automatically. Runs only once a day.
     """
