@@ -113,3 +113,51 @@ def inbox_diagnostics() -> dict:
             }
         finally:
             browser.close()
+
+
+def conversation_diagnostics(username: str) -> dict:
+    """Inspect selection state and chat structure without exposing messages."""
+    from streak_saver.modules.send_messages import _open_conversation
+
+    with sync_playwright() as playwright:
+        browser = playwright.chromium.launch(args=["--disable-blink-features=AutomationControlled"])
+        try:
+            context = browser.new_context(
+                user_agent=(
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+                )
+            )
+            context.add_cookies(get_cookies())
+            page = context.new_page()
+            page.goto("https://www.tiktok.com/messages", wait_until="domcontentloaded", timeout=60000)
+            _open_conversation(page, username)
+            page.wait_for_timeout(2000)
+            items = page.locator('[data-e2e="dm-new-conversation-item"]')
+            item_states = items.evaluate_all(
+                """elements => elements.map(element => ({
+                    name: element.querySelector('[data-e2e="dm-new-conversation-nickname"]')?.textContent?.trim(),
+                    class: element.className,
+                    ariaSelected: element.getAttribute('aria-selected'),
+                    dataState: element.getAttribute('data-state')
+                }))"""
+            )
+            chatbox = page.locator('[data-e2e="dm-new-chatbox"]').first
+            structure = chatbox.evaluate(
+                """root => {
+                    const describe = (element, depth = 0) => ({
+                        tag: element.tagName,
+                        class: element.className,
+                        dataE2e: element.getAttribute('data-e2e'),
+                        role: element.getAttribute('role'),
+                        ariaLabel: element.getAttribute('aria-label'),
+                        children: depth < 3
+                            ? [...element.children].slice(0, 12).map(child => describe(child, depth + 1))
+                            : []
+                    });
+                    return describe(root);
+                }"""
+            )
+            return {"url": page.url, "items": item_states, "chatbox": structure}
+        finally:
+            browser.close()
