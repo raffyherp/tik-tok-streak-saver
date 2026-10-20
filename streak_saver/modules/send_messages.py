@@ -18,6 +18,7 @@ import unicodedata
 
 
 app = typer.Typer()
+DELIVERY_CONFIRMATION_TIMEOUT_MS = 20000
 
 
 class SendAlreadyRunning(RuntimeError):
@@ -147,11 +148,23 @@ def _send_message(page, username: str, message: str) -> None:
     ).filter(visible=True).or_(
         page.get_by_label("Send a message...", exact=True).filter(visible=True)
     ).first
+    message_list = page.locator('[data-e2e="dm-new-message-list"]').first
+    message_list.wait_for(state="visible", timeout=10000)
+    matching_messages = message_list.get_by_text(message, exact=True)
+    previous_matches = matching_messages.count()
+    page.wait_for_timeout(750)
+    composer.click(timeout=10000)
     composer.fill(message, timeout=10000)
+    page.wait_for_timeout(300)
     composer.press("Enter", timeout=10000)
     # A click alone is not enough: wait for the UI to consume the draft before
     # navigating away or recording this recipient as sent.
     expect(composer).to_be_empty(timeout=10000)
+    # Clearing the editor can also happen when TikTok rejects the send. Only
+    # record success after the configured text appears as a new chat bubble.
+    expect(matching_messages).to_have_count(
+        previous_matches + 1, timeout=DELIVERY_CONFIRMATION_TIMEOUT_MS
+    )
 
 
 @app.command("send_messages")

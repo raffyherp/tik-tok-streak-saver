@@ -148,12 +148,16 @@ function openChat(user) {
       item.setAttribute('aria-selected', item.textContent === user ? 'true' : 'false'));
     document.querySelector('#conversation').innerHTML =
       `<div role="link" aria-label="${user}'s profile"></div>` +
+      '<div data-e2e="dm-new-message-list"></div>' +
       '<div contenteditable="true" data-e2e="message-input-area" aria-label="Отправить сообщение"></div>' +
       '<button data-e2e="message-send">Отправить</button>';
     const editor = document.querySelector('[contenteditable]');
     const send = () => {
       setTimeout(() => {
         console.log(JSON.stringify({user, message: editor.textContent}));
+        const bubble = document.createElement('p');
+        bubble.textContent = editor.textContent;
+        document.querySelector('[data-e2e="dm-new-message-list"]').append(bubble);
         editor.textContent = '';
       }, 100);
     };
@@ -241,6 +245,17 @@ class BrowserTests(unittest.TestCase):
         self.page.route("**/*", lambda route: route.fulfill(body=stuck_layout, content_type="text/html"))
         with self.assertRaises(AssertionError):
             sender._send_message(self.page, "bob", "Привет")
+
+    def test_cleared_editor_without_a_new_message_bubble_is_a_failure(self):
+        self.page.unroute("**/*")
+        rejected_layout = INBOX.replace(
+            "document.querySelector('[data-e2e=\"dm-new-message-list\"]').append(bubble);",
+            "/* TikTok rejected the message, so no bubble appeared. */",
+        )
+        self.page.route("**/*", lambda route: route.fulfill(body=rejected_layout, content_type="text/html"))
+        with patch.object(sender, "DELIVERY_CONFIRMATION_TIMEOUT_MS", 500):
+            with self.assertRaises(AssertionError):
+                sender._send_message(self.page, "bob", "Привет")
 
 
 if __name__ == "__main__":
