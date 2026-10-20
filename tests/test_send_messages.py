@@ -136,15 +136,18 @@ INBOX = """<!doctype html><html><body>
 <span style="display:none">alice</span>
 <input aria-label="Send a message..." style="display:none">
 <div data-e2e="dm-new-conversation-list">
-<button data-e2e="dm-new-conversation-item" onclick="openChat('alice_extra')"><span data-e2e="dm-new-conversation-nickname">alice_extra</span></button>
-<button data-e2e="dm-new-conversation-item" onclick="openChat('alice')"><span data-e2e="dm-new-conversation-nickname">alice</span></button>
-<button data-e2e="dm-new-conversation-item" onclick="openChat('bob')"><span data-e2e="dm-new-conversation-nickname">bob</span></button>
+<button data-e2e="dm-new-conversation-item" aria-selected="false" onclick="openChat('alice_extra')"><span data-e2e="dm-new-conversation-nickname">alice_extra</span></button>
+<button data-e2e="dm-new-conversation-item" aria-selected="false" onclick="openChat('alice')"><span data-e2e="dm-new-conversation-nickname">alice</span></button>
+<button data-e2e="dm-new-conversation-item" aria-selected="false" onclick="openChat('bob')"><span data-e2e="dm-new-conversation-nickname">bob</span></button>
 </div>
-<div id="conversation"></div>
+<div id="conversation" data-e2e="dm-new-chatbox"></div>
 <script>
 function openChat(user) {
   setTimeout(() => {
+    document.querySelectorAll('[data-e2e="dm-new-conversation-item"]').forEach(item =>
+      item.setAttribute('aria-selected', item.textContent === user ? 'true' : 'false'));
     document.querySelector('#conversation').innerHTML =
+      `<div role="link" aria-label="${user}'s profile"></div>` +
       '<div contenteditable="true" data-e2e="message-input-area" aria-label="Отправить сообщение"></div>' +
       '<button data-e2e="message-send">Отправить</button>';
     const editor = document.querySelector('[contenteditable]');

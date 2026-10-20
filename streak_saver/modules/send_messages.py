@@ -88,6 +88,18 @@ def _open_conversation(page, username: str) -> None:
                 name = nickname.inner_text(timeout=1000)
                 if item.is_visible() and _normalize_conversation_name(name) == _normalize_conversation_name(username):
                     item.click(force=True, timeout=10000, no_wait_after=True)
+                    expect(item).to_have_attribute("aria-selected", "true", timeout=10000)
+                    page.wait_for_function(
+                        """expected => {
+                            const header = document.querySelector(
+                                '[data-e2e="dm-new-chatbox"] [role="link"][aria-label]'
+                            );
+                            const label = header?.getAttribute('aria-label') || '';
+                            return label.normalize('NFKC').trim().toLocaleLowerCase().startsWith(expected);
+                        }""",
+                        arg=unicodedata.normalize("NFKC", name).strip().lower(),
+                        timeout=10000,
+                    )
                     return
             except Exception:
                 continue
