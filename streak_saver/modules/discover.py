@@ -39,9 +39,12 @@ def discover_conversations() -> list[str]:
                 raise RuntimeError("Cookie TikTok sudah tidak valid. Upload cookie baru.")
 
             selectors = (
+                '[data-e2e="conversation-item"]',
                 '[data-e2e="chat-list-item"]',
                 '[data-e2e="chat-list"] [role="listitem"]',
                 '[data-e2e="chat-list"] > div > div',
+                '[class*="ConversationItem"]',
+                '[class*="DivItemContainer"]',
                 'a[href*="/messages/"]',
             )
             names: list[str] = []

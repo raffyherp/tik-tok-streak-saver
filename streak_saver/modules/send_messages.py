@@ -24,11 +24,13 @@ def _send_message(page, username: str, message: str) -> None:
 
     # Prefer the stable attribute, which does not depend on the UI language.
     # Retain the accessible-label selector for layouts using the older editor.
-    composer = page.locator('[data-e2e="message-input-area"]').filter(visible=True).or_(
-        page.get_by_label("Send a message...", exact=True).filter(visible=True)
-    )
+    composer = page.locator(
+        '[data-e2e="message-input-area"], [data-e2e="message-input"], div[contenteditable="true"]'
+    ).filter(visible=True).or_(page.get_by_label("Send a message...", exact=True).filter(visible=True))
     composer.fill(message, timeout=10000)
-    page.locator('[data-e2e="message-send"]').filter(visible=True).click(timeout=10000)
+    page.locator(
+        '[data-e2e="message-send"], [data-e2e="send-button"], button[class*="Send"]'
+    ).filter(visible=True).first.click(timeout=10000)
     # A click alone is not enough: wait for the UI to consume the draft before
     # navigating away or recording this recipient as sent.
     expect(composer).to_be_empty(timeout=10000)
