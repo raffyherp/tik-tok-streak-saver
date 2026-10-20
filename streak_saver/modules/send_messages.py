@@ -14,6 +14,7 @@ from contextlib import contextmanager
 import os
 import time
 import typer
+import unicodedata
 
 
 app = typer.Typer()
@@ -21,6 +22,10 @@ app = typer.Typer()
 
 class SendAlreadyRunning(RuntimeError):
     pass
+
+
+def _normalize_conversation_name(value: str) -> str:
+    return unicodedata.normalize("NFKC", value).strip().lstrip("@").strip().casefold()
 
 
 @contextmanager
@@ -80,8 +85,8 @@ def _open_conversation(page, username: str) -> None:
             item = items.nth(index)
             nickname = item.locator('[data-e2e="dm-new-conversation-nickname"]').first
             try:
-                name = nickname.inner_text(timeout=1000).strip().lstrip("@").strip()
-                if item.is_visible() and name == username:
+                name = nickname.inner_text(timeout=1000)
+                if item.is_visible() and _normalize_conversation_name(name) == _normalize_conversation_name(username):
                     item.click(force=True, timeout=10000, no_wait_after=True)
                     return
             except Exception:
@@ -125,9 +130,7 @@ def _send_message(page, username: str, message: str) -> None:
         page.get_by_label("Send a message...", exact=True).filter(visible=True)
     ).first
     composer.fill(message, timeout=10000)
-    page.locator(
-        '[data-e2e="message-send"], [data-e2e="send-button"], button[class*="Send"]'
-    ).filter(visible=True).first.click(timeout=10000)
+    composer.press("Enter", timeout=10000)
     # A click alone is not enough: wait for the UI to consume the draft before
     # navigating away or recording this recipient as sent.
     expect(composer).to_be_empty(timeout=10000)

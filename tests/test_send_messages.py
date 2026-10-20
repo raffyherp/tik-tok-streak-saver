@@ -148,11 +148,15 @@ function openChat(user) {
       '<div contenteditable="true" data-e2e="message-input-area" aria-label="Отправить сообщение"></div>' +
       '<button data-e2e="message-send">Отправить</button>';
     const editor = document.querySelector('[contenteditable]');
-    document.querySelector('[data-e2e="message-send"]').onclick = () => {
+    const send = () => {
       setTimeout(() => {
         console.log(JSON.stringify({user, message: editor.textContent}));
         editor.textContent = '';
       }, 100);
+    };
+    document.querySelector('[data-e2e="message-send"]').onclick = send;
+    editor.onkeydown = event => {
+      if (event.key === 'Enter') { event.preventDefault(); send(); }
     };
   }, 50);
 }
@@ -216,6 +220,10 @@ class BrowserTests(unittest.TestCase):
         )
         self.page.route("**/*", lambda route: route.fulfill(body=current_layout, content_type="text/html"))
         sender._send_message(self.page, "alice", "🔥")
+        self.assertEqual(self.sent, [{"user": "alice", "message": "🔥"}])
+
+    def test_conversation_name_matching_is_case_insensitive(self):
+        sender._send_message(self.page, "ALICE", "🔥")
         self.assertEqual(self.sent, [{"user": "alice", "message": "🔥"}])
 
     def test_unconsumed_draft_is_a_failure(self):
