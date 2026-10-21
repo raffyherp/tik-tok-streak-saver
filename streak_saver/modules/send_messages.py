@@ -92,24 +92,30 @@ def _open_conversation(page, username: str) -> None:
             nickname = item.locator('[data-e2e="dm-new-conversation-nickname"]').first
             try:
                 name = nickname.inner_text(timeout=1000)
-                if _normalize_conversation_name(name) == _normalize_conversation_name(username):
-                    item.scroll_into_view_if_needed(timeout=5000)
-                    item.click(force=True, timeout=10000, no_wait_after=True)
-                    expect(item).to_have_attribute("aria-selected", "true", timeout=10000)
-                    page.wait_for_function(
-                        """expected => {
-                            const header = document.querySelector(
-                                '[data-e2e="dm-new-chatbox"] [role="link"][aria-label]'
-                            );
-                            const label = header?.getAttribute('aria-label') || '';
-                            return label.normalize('NFKC').trim().toLocaleLowerCase().startsWith(expected);
-                        }""",
-                        arg=unicodedata.normalize("NFKC", name).strip().lower(),
-                        timeout=10000,
-                    )
-                    return
             except Exception:
                 continue
+            if _normalize_conversation_name(name) == _normalize_conversation_name(username):
+                item.scroll_into_view_if_needed(timeout=5000)
+                item.click(force=True, timeout=10000, no_wait_after=True)
+                expect(item).to_have_attribute("aria-selected", "true", timeout=10000)
+                # Mirror _normalize_conversation_name: TikTok may render ZWJ emoji
+                # sequences (e.g. 🙂‍↔️) differently in the header than in the list.
+                page.wait_for_function(
+                    """expected => {
+                        const header = document.querySelector(
+                            '[data-e2e="dm-new-chatbox"] [role="link"][aria-label]'
+                        );
+                        const label = (header?.getAttribute('aria-label') || '')
+                            .normalize('NFKC').trim().replace(/^@+/, '').trim()
+                            .toLocaleLowerCase()
+                            .replace(/[\\u200b-\\u200d\\ufe0e\\ufe0f]/g, '')
+                            .replace(/\\s+/g, ' ');
+                        return label.startsWith(expected);
+                    }""",
+                    arg=_normalize_conversation_name(name),
+                    timeout=10000,
+                )
+                return
 
         if not conversation_list.count():
             break
