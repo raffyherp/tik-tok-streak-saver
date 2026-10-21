@@ -11,6 +11,7 @@ from playwright.sync_api import expect, sync_playwright
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from contextlib import contextmanager
+from typing import Annotated
 import os
 import time
 import typer
@@ -174,15 +175,19 @@ def _send_message(page, username: str, message: str) -> None:
 
 
 @app.command("send_messages")
-def send_messages():
+def send_messages(
+    force: Annotated[
+        bool, typer.Option("--force", help="Send to every recipient even if already sent today.")
+    ] = False,
+):
     try:
         with _send_lock():
-            _send_messages()
+            _send_messages(force)
     except SendAlreadyRunning:
         send_script_message("Another send process is already running; skipping this execution.")
 
 
-def _send_messages():
+def _send_messages(force: bool = False):
     """
     Send messages to all people from the list. With autostart on runs automatically. Runs only once a day.
     """
@@ -203,7 +208,7 @@ def _send_messages():
         return
 
     today = datetime.now(ZoneInfo("Asia/Jakarta")).date().isoformat()
-    if config["SETTINGS"]["last_send"] == today:
+    if not force and config["SETTINGS"]["last_send"] == today:
         send_script_message("Already send messages today.")
         return
 
@@ -215,7 +220,7 @@ def _send_messages():
         config.add_section("sent_dates")
     pending = [
         username for username in config["users"]
-        if config["sent_dates"].get(username) != today
+        if force or config["sent_dates"].get(username) != today
     ]
     failed = []
     try:

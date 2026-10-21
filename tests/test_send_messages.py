@@ -105,6 +105,12 @@ class SendingTests(unittest.TestCase):
         self.send.assert_not_called()
         self.playwright.assert_not_called()
 
+    def test_force_resends_recipients_already_sent_today(self):
+        self.config["SETTINGS"]["last_send"] = self.today
+        self.config["sent_dates"] = {"alice": self.today, "bob": self.today}
+        sender.send_messages(force=True)
+        self.assertEqual([call.args[1] for call in self.send.call_args_list], ["alice", "bob"])
+
     def test_browser_failure_is_reported_and_does_not_mark_complete(self):
         self.runtime.chromium.launch.side_effect = RuntimeError("browser missing")
         with self.assertRaises(typer.Exit):
