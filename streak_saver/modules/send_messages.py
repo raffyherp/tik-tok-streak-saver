@@ -66,7 +66,7 @@ def _open_conversation(page, username: str) -> None:
     """Open an exact inbox item, scrolling TikTok's virtual list if needed."""
     items = page.locator('[data-e2e="dm-new-conversation-item"]')
     try:
-        items.first.wait_for(state="visible", timeout=10000)
+        items.first.wait_for(state="visible", timeout=30000)
     except Exception:
         # Keep compatibility with older inbox layouts.
         page.get_by_text(username, exact=True).filter(visible=True).first.click(
