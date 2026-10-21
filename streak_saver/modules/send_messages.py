@@ -101,18 +101,18 @@ def _open_conversation(page, username: str) -> None:
                 expect(item).to_have_attribute("aria-selected", "true", timeout=10000)
                 # Mirror _normalize_conversation_name: TikTok may render ZWJ emoji
                 # sequences (e.g. 🙂‍↔️) differently in the header than in the list.
+                # The header is role="link" for most chats but role="columnheader"
+                # for some, so accept either.
                 page.wait_for_function(
-                    """expected => {
-                        const header = document.querySelector(
-                            '[data-e2e="dm-new-chatbox"] [role="link"][aria-label]'
-                        );
-                        const label = (header?.getAttribute('aria-label') || '')
-                            .normalize('NFKC').trim().replace(/^@+/, '').trim()
-                            .toLocaleLowerCase()
-                            .replace(/[\\u200b-\\u200d\\ufe0e\\ufe0f]/g, '')
-                            .replace(/\\s+/g, ' ');
-                        return label.startsWith(expected);
-                    }""",
+                    """expected => [...document.querySelectorAll(
+                        '[data-e2e="dm-new-chatbox"] [role="link"][aria-label], ' +
+                        '[data-e2e="dm-new-chatbox"] [role="columnheader"][aria-label]'
+                    )].some(header => header.getAttribute('aria-label')
+                        .normalize('NFKC').trim().replace(/^@+/, '').trim()
+                        .toLocaleLowerCase()
+                        .replace(/[\\u200b-\\u200d\\ufe0e\\ufe0f]/g, '')
+                        .replace(/\\s+/g, ' ')
+                        .startsWith(expected))""",
                     arg=_normalize_conversation_name(name),
                     timeout=10000,
                 )

@@ -261,6 +261,22 @@ class BrowserTests(unittest.TestCase):
         sender._send_message(self.page, name, "🔥")
         self.assertEqual(self.sent, [{"user": name, "message": "🔥"}])
 
+    def test_columnheader_chat_header_is_accepted(self):
+        name = "LC (lucu cute)🙂‍↔️"
+        self.page.unroute("**/*")
+        layout = INBOX.replace(
+            '<button data-e2e="dm-new-conversation-item" aria-selected="false" onclick="openChat(\'bob\')">',
+            f'<button data-e2e="dm-new-conversation-item" aria-selected="false" onclick="openChat(\'{name}\')">'
+            f'<span data-e2e="dm-new-conversation-nickname">{name}</span></button>'
+            '<button data-e2e="dm-new-conversation-item" aria-selected="false" onclick="openChat(\'bob\')">',
+        ).replace(
+            "<div role=\"link\" aria-label=\"${user}'s profile\"></div>",
+            "<div role=\"columnheader\" aria-label=\"${user}’s profile\"></div>",
+        )
+        self.page.route("**/*", lambda route: route.fulfill(body=layout, content_type="text/html; charset=utf-8"))
+        sender._send_message(self.page, name, "🔥")
+        self.assertEqual(self.sent, [{"user": name, "message": "🔥"}])
+
     def test_unconsumed_draft_is_a_failure(self):
         self.page.unroute("**/*")
         stuck_layout = INBOX.replace("editor.textContent = '';", "/* Send did not consume the draft. */")
